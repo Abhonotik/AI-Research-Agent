@@ -1,5 +1,5 @@
-from groq import Groq
-from dotenv import load_dotenv
+from groq import Groq 
+from dotenv import load_dotenv # to read .evn file 
 import os
 import json
 
@@ -134,7 +134,7 @@ USER QUESTION:
             temperature=0
         )
 
-        content = response.choices[0].message.content
+        content = response.choices[0].message.content  # get the content of the message 0 is for the first choice
 
         print("RAW LLM OUTPUT:")
         print(content)
@@ -147,7 +147,7 @@ USER QUESTION:
         print("\nCLEANED OUTPUT:")
         print(cleaned_content)
 
-        plan_dict = json.loads(cleaned_content)
+        plan_dict = json.loads(cleaned_content) # parse the cleaned content into a dictionary
 
         validated_plan = ResearchPlan(**plan_dict)
 
