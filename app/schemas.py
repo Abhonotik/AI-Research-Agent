@@ -1,9 +1,9 @@
-from pydantic import BaseModel
-from typing import Literal
-from typing import List
+from pydantic import BaseModel # proper output in strict structure. 
+from typing import Literal # for fixed options only.
+from typing import List # only list of items, no single values allowed or number. 
 
-
-class QueryRequest(BaseModel):
+# for the input query, which is a string.
+class QueryRequest(BaseModel): 
     query: str
 
 
