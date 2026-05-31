@@ -1,4 +1,4 @@
-from ddgs import DDGS
+from ddgs import DDGS # DuckDuckGo Search API for web searching.
 
 def search_web(query: str, max_results: int = 5):
 
@@ -6,9 +6,9 @@ def search_web(query: str, max_results: int = 5):
 
     try:
 
-        with DDGS() as ddgs:
+        with DDGS() as ddgs:   
 
-            results = ddgs.text(
+            results = ddgs.text(  # actual search 
                 query,
                 max_results=max_results
             )
