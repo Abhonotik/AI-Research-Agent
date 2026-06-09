@@ -6,21 +6,25 @@ The system takes a user query, generates a research strategy, retrieves relevant
 
 ---
 
-## Features
+# Features
 
 * Query planning using LLMs
 * Multi-step orchestration workflow
 * Web search and retrieval
-* Web scraping for content extraction
+* Web scraping with retry logic and exponential backoff
 * Source validation and filtering
+* Dynamic agent decision making
 * Structured synthesis of findings
 * Confidence estimation based on retrieval quality
+* Graceful degradation and fallback handling
+* Dependency injection for improved testability
 * FastAPI API interface
 * Pydantic schema validation
+* Pytest-based unit testing
 
 ---
 
-## Architecture
+# Architecture
 
 ```text
 User Query
@@ -38,7 +42,11 @@ Synthesizer
 Structured Response
 ```
 
-### Planner
+---
+
+# Components
+
+## Planner
 
 The planner converts a user question into a structured research strategy.
 
@@ -56,7 +64,7 @@ Input:
 Compare top vector databases for RAG
 ```
 
-Planner output:
+Planner Output:
 
 ```json
 {
@@ -76,64 +84,77 @@ Planner output:
 
 ---
 
-### Search Tool
+## Search Tool
 
 The search tool retrieves relevant URLs from the web.
 
-Goals:
+Responsibilities:
 
 * Retrieve relevant sources
 * Reduce noisy retrieval
-* Prioritize comparison-oriented pages
-
-Filtering heuristics:
-
-* comparison
-* vs
-* benchmark
-* best
-* top
+* Improve evidence quality
 
 ---
 
-### Scraper Tool
+## Scraper Tool
 
 The scraper extracts webpage content for downstream synthesis.
 
 Responsibilities:
 
-* Extract readable article text
-* Remove webpage noise
+* Extract readable article content
 * Handle failed requests gracefully
+* Retry transient failures
+
+Implemented Reliability Features:
+
+* Retry Logic
+* Exponential Backoff
+* Timeout Handling
+
+Example Retry Flow:
+
+```text
+Request Failed
+    ↓
+Retry 1 (1 second)
+    ↓
+Retry 2 (2 seconds)
+    ↓
+Retry 3 (4 seconds)
+    ↓
+Failure Returned Safely
+```
 
 ---
 
-### Validator Tool
+## Validator Tool
 
 The validator filters weak or noisy sources.
 
 Validation checks:
 
 * Empty content rejection
-* Minimum content length
-* Low-quality/noisy page filtering
+* Minimum content length checks
+* Spam content filtering
+* Low-quality source filtering
 
-This helps reduce hallucinations and irrelevant synthesis.
+This reduces irrelevant information entering synthesis.
 
 ---
 
-### Synthesizer
+## Synthesizer
 
-The synthesizer combines validated research content into a structured response.
+The synthesizer combines validated content into a structured research response.
 
 Responsibilities:
 
-* Cross-source synthesis
-* Comparison-aware reasoning
+* Cross-source reasoning
+* Comparison-aware synthesis
 * Tradeoff analysis
 * Structured JSON generation
 
-Output format:
+Output Format:
 
 ```json
 {
@@ -149,32 +170,128 @@ Output format:
 
 ---
 
-## Hallucination Reduction Strategy
+# Reliability & Production Readiness
 
-Hallucinations cannot be fully eliminated in probabilistic systems, but they can be reduced.
+## Retry Logic
 
-This project reduces hallucinations using:
+The scraper retries failed requests up to three times using exponential backoff.
 
-1. Retrieval grounding
-   The model answers using retrieved information rather than relying only on internal memory.
+Handled Scenarios:
 
-2. Planning layer
-   The planner improves retrieval quality through structured search strategies.
+* HTTP 403 responses
+* Timeouts
+* Temporary network failures
 
-3. Source validation
-   Noisy or irrelevant sources are filtered before synthesis.
-
-4. Structured outputs
-   Pydantic schemas enforce deterministic output formatting.
-
-5. Confidence estimation
-   Confidence is derived from retrieval quality rather than relying purely on model self-confidence.
+If all retries fail, the workflow continues safely.
 
 ---
 
-## Confidence Heuristic
+## Graceful Degradation
 
-Confidence is calculated using validated retrieval quality.
+The planner and synthesizer include fallback behavior.
+
+If:
+
+* JSON parsing fails
+* Provider errors occur
+* Rate limits occur
+
+the system falls back to a minimal structured plan rather than terminating.
+
+---
+
+## Dependency Injection
+
+The Groq client is injected into planner and synthesizer components instead of being instantiated globally.
+
+Benefits:
+
+* Improved testability
+* Easier mocking
+* Better modularity
+* Easier future provider replacement
+
+---
+
+# Adaptive Agent Behaviour
+
+The agent is not strictly linear.
+
+After retrieval, the orchestrator evaluates evidence quality.
+
+If fewer than two validated sources are collected, the agent dynamically expands retrieval before synthesis.
+
+Examples:
+
+* Comparison Tasks → Benchmark Search
+* Recommendation Tasks → Review Search
+* Analysis Tasks → Analysis-Focused Search
+
+This improves evidence coverage and final answer quality.
+
+---
+
+# Hallucination Reduction Strategy
+
+The project reduces hallucinations through multiple safeguards.
+
+## Retrieval Grounding
+
+The system retrieves external evidence before generating answers.
+
+```text
+User Query
+    ↓
+Retrieval
+    ↓
+Validation
+    ↓
+Synthesis
+```
+
+## Planning Layer
+
+The planner transforms broad questions into focused search queries.
+
+Example:
+
+Instead of:
+
+```text
+vector databases
+```
+
+The planner generates:
+
+```text
+Pinecone vs Weaviate vs Qdrant comparison
+Milvus vs Pinecone benchmark
+```
+
+This improves retrieval quality.
+
+---
+
+## Source Validation
+
+The validator removes:
+
+* Empty pages
+* Spam content
+* Low-quality retrieval
+* Weak evidence
+
+---
+
+## Structured Outputs
+
+Pydantic schemas enforce deterministic output formats.
+
+---
+
+## Confidence Estimation
+
+Confidence is derived from retrieval quality.
 
 | Valid Sources | Confidence |
 | ------------- | ---------- |
@@ -182,33 +299,65 @@ Confidence is calculated using validated retrieval quality.
 | 2             | Medium     |
 | 3+            | High       |
 
-This avoids relying entirely on model self-assessment.
+This prevents overconfident responses from weak retrieval.
 
 ---
 
-## Tech Stack
+# Testing
 
-Backend:
+The project uses pytest for automated testing.
+
+Covered Components:
+
+* Validator Tool
+* Scraper Tool
+* Orchestrator Workflow
+
+Testing Features:
+
+* Assertions
+* Mocking
+* Offline execution
+
+Run Tests:
+
+```bash
+python -m pytest
+```
+
+Current Result:
+
+```text
+5 passed
+0 failed
+```
+
+---
+
+# Tech Stack
+
+## Backend
 
 * Python
 * FastAPI
 * Uvicorn
 
-AI / LLM:
+## AI / LLM
 
 * Groq API
 * Llama 3.1
 
-Libraries:
+## Libraries
 
 * requests
 * BeautifulSoup4
 * Pydantic
 * python-dotenv
+* pytest
 
 ---
 
-## Project Structure
+# Project Structure
 
 ```text
 research-agent/
@@ -225,59 +374,35 @@ research-agent/
 │       ├── scraper_tool.py
 │       └── validator_tool.py
 │
-├── test_planner.py
-├── test_search.py
-├── test_scraper.py
-├── test_validator.py
-├── test_synthesizer.py
-├── test_orchestrator.py
+├── tests/
+│   ├── test_orchestrator.py
+│   ├── test_scraper.py
+│   └── test_validator.py
 │
+├── screenshots/
+├── Evaluation.md
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## API Usage
+# Setup
 
-Run server:
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Open Swagger UI:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-Example request:
-
-```json
-{
-  "query": "Compare top vector databases for RAG"
-}
-```
-
----
-
-## Setup
-
-Clone repository:
+Clone Repository:
 
 ```bash
 git clone <repo-url>
 cd research-agent
 ```
 
-Create virtual environment:
+Create Virtual Environment:
 
 ```bash
 python -m venv venv
 ```
 
-Activate:
+Activate Environment:
 
 Windows:
 
@@ -285,7 +410,7 @@ Windows:
 venv\Scripts\activate
 ```
 
-Install dependencies:
+Install Dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -297,41 +422,65 @@ Create `.env` file:
 GROQ_API_KEY=your_api_key_here
 ```
 
-Start server:
+Start API:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
+Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
 ---
 
-## Limitations
+# Evaluation
 
-* Web scraping quality depends on page structure
-* Search relevance may vary
+Detailed evaluation results are available in:
+
+```text
+Evaluation.md
+```
+
+The evaluation includes:
+
+* Successful research tasks
+* Retry logic evidence
+* Dynamic agent behaviour
+* Failure case analysis
+* Hallucination mitigation strategy
+
+---
+
+# Known Limitations
+
+* Some websites block scraping (403 responses)
+* Retrieval quality depends on public source availability
 * Confidence uses heuristic scoring
-* Retrieval quality affects synthesis quality
+* The system currently relies on a single LLM provider
 * LLM outputs remain probabilistic
 
 ---
 
-## Future Improvements
+# Future Improvements
 
-* Retry logic
-* Better source ranking
-* Smarter confidence scoring
-* Async orchestration
-* Multi-agent workflows
+* Multi-provider LLM fallback
+* Semantic source ranking
 * Retrieval caching
+* Async orchestration
+* Enhanced confidence estimation
+* Larger evaluation benchmarks
 
 ---
 
-## Example Output
+# Example Output
 
 ```json
 {
   "question": "Compare top vector databases for RAG",
   "short_answer": "Pinecone is best for managed production deployments, Qdrant is lightweight and startup-friendly, Weaviate supports hybrid search, while Milvus is suitable for enterprise-scale workloads.",
-  "confidence": "Medium"
+  "confidence": "High"
 }
 ```

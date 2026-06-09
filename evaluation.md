@@ -1,119 +1,199 @@
 # Evaluation Report
 
+See screenshots in the `/screenshots` folder:
+
+-all_try_failure_case
+-final_output
+-no_content
+-pytest_passed
+-5_passed
+
 ## Objective
 
-The goal of this evaluation is to assess the quality, reliability, and limitations of the AI Research Agent across different research-oriented tasks.
+The objective of this evaluation is to assess the quality, reliability, adaptability, and limitations of the AI Research Agent.
 
-The system was evaluated on:
+The system was evaluated across the following dimensions:
 
 * Retrieval quality
-* Relevance of synthesized answers
+* Synthesis quality
 * Confidence estimation
 * Hallucination reduction
-* Failure handling
+* Dynamic decision making
+* Reliability and failure handling
 
 ---
 
 # Evaluation Methodology
 
-Each query was tested end-to-end using:
+Each query was executed through the complete agent workflow:
 
-```text
 Planner
 → Search Tool
 → Scraper Tool
 → Validator Tool
 → Synthesizer
-```
 
-For each query, the following were evaluated:
+The following aspects were evaluated:
 
 * Query understanding
 * Search relevance
 * Retrieval quality
 * Synthesis quality
-* Confidence score
-* Limitations
+* Confidence estimation
+* Failure handling
 
 ---
 
-# Evaluation Results
+# Evaluation Results Summary
 
-| Query                                  | Expected Behavior                                                     | Actual Result                                                                                            | Confidence | Notes                                                           |
-| -------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------- |
-| Compare top vector databases for RAG   | Compare Pinecone, Weaviate, Qdrant, Milvus and discuss tradeoffs      | Successfully compared vector databases and highlighted deployment, scalability and operational tradeoffs | Medium     | Good comparison quality, but limited by number of valid sources |
-| Best AI coding assistants for startups | Recommend tools like Cursor, GitHub Copilot and compare cost/features | Retrieved recommendation-oriented sources and generated structured findings                              | Medium     | Retrieval quality affected final recommendations                |
-| Explain hallucinations in LLMs         | Explain causes and mitigation strategies                              | Produced grounded explanation using retrieved evidence                                                   | High       | Good explanation quality                                        |
-| Compare SQL vs NoSQL databases         | Compare use cases, performance and scalability                        | Generated structured comparison with tradeoffs                                                           | Medium     | Quality depended on retrieved comparison sources                |
-| Best backend framework for startups    | Compare FastAPI, Django, Express, Spring Boot                         | Produced recommendation-focused output                                                                   | Medium     | Retrieval relevance impacted synthesis quality                  |
+| Query                                          | Expected Behaviour                                    | Actual Result                                                                               | Confidence |
+| ---------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------- |
+| Compare top vector databases for RAG           | Compare Pinecone, Weaviate, Qdrant and Milvus         | Successfully generated a multi-source comparison with deployment and scalability tradeoffs  | High       |
+| Compare FastAPI vs Django for startup backends | Compare backend frameworks and provide recommendation | Generated structured comparison covering performance, flexibility and development tradeoffs | High       |
+| 8ARNMqo7uXgU5NTweEmWn46Hvewjcp1PtqfXTKDZTj29k  | Gracefully handle invalid query                       | Rejected irrelevant retrievals and terminated safely without hallucinating an answer        | N/A        |
+
+---
+
+# Detailed Example 1
+
+## Query
+
+Compare top vector databases for RAG
+
+## Full System Output
+
+* Pinecone is best for managed production deployments.
+* Weaviate supports hybrid search.
+* Qdrant is lightweight and startup-friendly.
+* Milvus is suitable for enterprise-scale workloads.
+
+### Key Findings
+
+* Pinecone has low operational overhead.
+* Weaviate provides greater index configuration control.
+* Qdrant performs strongly on ANN query throughput.
+* Milvus focuses heavily on scalability.
+
+### Confidence
+
+High
+
+### Assessment
+
+Strengths:
+
+* Multiple independent sources retrieved.
+* Retry logic successfully handled blocked pages.
+* Structured synthesis generated successfully.
+
+Weaknesses:
+
+* Some sources (Medium) blocked scraping.
+* Pricing coverage remained limited.
+
+Overall:
+
+The agent successfully produced a useful comparison while handling source failures gracefully.
+
+---
+
+# Detailed Example 2
+
+## Query
+
+Compare FastAPI vs Django for startup backends
+
+## Full System Output
+
+* FastAPI is best for simple, high-performance API development.
+* Django is suitable for complex, full-featured web applications.
+
+### Key Findings
+
+* FastAPI has a lower learning curve.
+* FastAPI offers native async support.
+* Django provides integrated validation and ORM support.
+* Django benefits from a mature ecosystem.
+
+### Confidence
+
+High
+
+### Assessment
+
+Strengths:
+
+* Successfully handled blocked and slow sources.
+* Generated balanced framework comparison.
+* Produced actionable recommendations.
+
+Weaknesses:
+
+* Conclusions depend on retrieval quality.
+* Framework suitability varies by project requirements.
+
+Overall:
+
+The agent generated a practical recommendation and demonstrated robust retrieval behaviour.
+
+---
+
+# Adaptive Agent Behaviour
+
+The agent includes runtime decision making.
+
+If fewer than two validated sources are collected, the orchestrator automatically expands the search strategy before synthesis.
+
+Examples:
+
+* Comparison tasks → benchmark-focused search
+* Recommendation tasks → review-focused search
+* Analysis tasks → analysis-focused search
+
+This improves evidence collection and synthesis quality.
 
 ---
 
 # Hallucination Reduction Strategy
 
-Hallucinations cannot be fully eliminated in probabilistic systems, but the project reduces hallucinations through multiple safeguards.
+The system reduces hallucinations through multiple engineering safeguards.
 
-### 1. Retrieval Grounding
+## Retrieval Grounding
 
-The system retrieves external evidence before generating answers.
+The agent retrieves external evidence before generating an answer.
 
-This reduces reliance on internal model memory.
-
-Flow:
-
-```text
 User Query
-    ↓
-Search + Retrieval
-    ↓
-Validated Content
-    ↓
-Synthesis
-```
+→ Retrieval
+→ Validation
+→ Synthesis
 
----
+## Structured Planning
 
-### 2. Planning Layer
-
-A planning module generates structured search queries.
+The planner converts broad questions into targeted search queries.
 
 Example:
 
-Instead of generic retrieval:
+Instead of:
 
-```text
 vector databases
-```
 
 The planner generates:
 
-```text
-Pinecone vs Weaviate vs Qdrant comparison
-Milvus vs Pinecone benchmark
-```
+* Pinecone vs Weaviate vs Qdrant comparison
+* Milvus vs Pinecone benchmark
 
-This improves retrieval quality and reduces noisy results.
-
----
-
-### 3. Source Validation
+## Validation Layer
 
 The validator removes:
 
 * Empty pages
 * Low-quality retrieval
-* Weak content
-* Noisy sources
+* Spam pages
+* Invalid content
 
-This reduces irrelevant context entering synthesis.
+## Confidence Estimation
 
----
-
-### 4. Confidence Heuristic
-
-Confidence is not fully delegated to the LLM.
-
-Instead, confidence is heuristically derived from validated retrieval quality.
+Confidence is derived from retrieval quality.
 
 | Valid Sources | Confidence |
 | ------------- | ---------- |
@@ -121,93 +201,97 @@ Instead, confidence is heuristically derived from validated retrieval quality.
 | 2             | Medium     |
 | 3+            | High       |
 
-This prevents overconfident responses from weak retrieval.
+---
+
+# Deliberate Failure Case
+
+## Query
+
+8ARNMqo7uXgU5NTweEmWn46Hvewjcp1PtqfXTKDZTj29k
+
+## Observed Behaviour
+
+The planner generated a valid plan.
+
+The search engine returned unrelated results.
+
+The relevance filter rejected all retrieved pages because none matched the original query.
+
+System logs:
+
+Skipped - low relevance (score: 0)
+
+Skipped - low relevance (score: 0)
+
+No valid content found
+
+FINAL OUTPUT:
+
+None
+
+## Assessment
+
+The agent failed gracefully.
+
+Instead of hallucinating unsupported information, the workflow terminated because no relevant evidence was available.
+
+This behaviour is acceptable and desirable for invalid or meaningless queries.
 
 ---
 
-# Failure Cases Observed
+# Reliability Improvements Implemented
 
-### 1. Limited Source Availability
+## Retry Logic
 
-Some webpages blocked scraping or returned incomplete content.
+The scraper retries failed requests using exponential backoff.
 
-Example:
+Observed during evaluation:
 
-* Medium articles
-* Dynamic webpages
-* Video-only content
+* Medium (403)
+* Reddit (403)
+* Read timeout errors
 
-Impact:
+## Graceful Degradation
 
-* Reduced retrieval quality
+When planner or retrieval stages encounter issues, fallback behaviour prevents crashes.
 
-Mitigation:
+## Dependency Injection
 
-* Multiple search queries
-* Validation filters
-* Source fallback behavior
+The Groq client is injected into planner and synthesizer modules, improving testability and allowing future provider replacement.
 
----
+## Unit Testing
 
-### 2. Retrieval Noise
+Implemented pytest-based tests with assertions and mocking.
 
-Generic articles occasionally entered retrieval.
+Current Result:
 
-Impact:
-
-* Lower-quality synthesis
-
-Mitigation:
-
-* Query planning improvements
-* Title filtering heuristics
-* Comparison-oriented search
-
----
-
-### 3. LLM Output Formatting Errors
-
-The LLM occasionally returned malformed JSON or incorrect field types.
-
-Impact:
-
-* Validation failures
-
-Mitigation:
-
-* Pydantic schema enforcement
-* Strict prompt constraints
-* JSON cleanup logic
+5 Passed
+0 Failed
 
 ---
 
 # Key Learnings
 
-1. Retrieval quality heavily influences final answer quality.
-
-2. Planning improves search relevance significantly.
-
-3. Confidence should not rely solely on model self-assessment.
-
-4. Structured outputs improve reliability and determinism.
-
-5. Hallucination reduction is an engineering problem, not only a prompting problem.
+1. Retrieval quality strongly influences synthesis quality.
+2. Planning significantly improves retrieval relevance.
+3. Confidence should be tied to evidence quality.
+4. Reliability requires engineering safeguards beyond prompting.
+5. Dynamic retrieval improves answer quality when evidence is limited.
 
 ---
 
 # Future Improvements
 
-* Async orchestration for faster execution
-* Retry logic for scraping failures
-* Better source ranking
-* Smarter confidence scoring
+* Multi-provider LLM fallback
+* Semantic relevance scoring
 * Retrieval caching
-* More robust evaluation benchmarks
+* Async orchestration
+* Enhanced confidence estimation
 
 ---
 
 # Conclusion
 
-The AI Research Agent successfully demonstrates a production-minded research workflow using planning, retrieval, validation, synthesis, and confidence estimation.
+The AI Research Agent demonstrates a production-oriented research workflow using planning, retrieval, validation, synthesis, confidence estimation, retry logic, dynamic decision making, and graceful failure handling.
 
-While limitations remain due to probabilistic generation and web retrieval variability, the system reduces hallucinations and improves reliability through structured engineering safeguards.
+The evaluation shows that the system can generate grounded research summaries while avoiding unsupported answers when evidence is insufficient.

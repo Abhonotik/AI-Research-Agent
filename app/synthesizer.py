@@ -7,18 +7,22 @@ from app.schemas import ResearchResponse
 
 load_dotenv(dotenv_path=".env")
 
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY")
-)
-
+def get_groq_client():
+    return Groq(
+        api_key=os.getenv("GROQ_API_KEY")
+    )
 
 def synthesize_research(
     question: str,
     content_list: list[str],
-    source_urls: list[str]
+    source_urls: list[str],
+    client=None
 ):
 
     combined_content = "\n\n".join(content_list)
+
+    if client is None:
+        client = get_groq_client()
 
     prompt = f"""
 You are an AI research assistant.
@@ -123,7 +127,8 @@ SOURCES:
                     "content": prompt
                 }
             ],
-            temperature=0
+            temperature=0,
+            timeout=30
         )
 
         content = response.choices[0].message.content
@@ -147,4 +152,13 @@ SOURCES:
     except Exception as e:
 
         print(f"Synthesizer Error: {e}")
-        return None
+        
+        return ResearchResponse(
+            question=question,
+            short_answer="Unable to synthesize research at this time.",
+            key_findings=[],
+            sources_used=source_urls,
+            confidence="Low",
+            limitations=["LLM provider unavailable"],
+            suggested_next_steps=["Retry later"]
+        )

@@ -6,7 +6,7 @@ def validate_content(content: str):
     if len(content) < 300:
         return False
 
-    spam_keywords = [
+    spam_keywords = [  # common indicators of low-quality or irrelevant content.
         "cookie policy",
         "enable javascript",
         "404"

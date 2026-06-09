@@ -1,15 +1,18 @@
-from app.tools.scraper_tool import scrape_webpage
 from app.tools.validator_tool import validate_content
 
 
-print("\nTESTING VALIDATOR TOOL...\n")
+def test_validator_rejects_empty_content():
 
-url = "https://www.ibm.com/think/topics/rag-vector-database"
+    assert validate_content("") is False
 
-content = scrape_webpage(url)
 
-is_valid = validate_content(content)
+def test_validator_rejects_short_content():
 
-print("\nVALIDATION RESULT:\n")
+    assert validate_content("hello") is False
 
-print(is_valid)
+
+def test_validator_accepts_valid_content():
+
+    content = "This is valid research content. " * 50
+
+    assert validate_content(content) is True

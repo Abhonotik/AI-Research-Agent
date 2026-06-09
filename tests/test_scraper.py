@@ -1,12 +1,29 @@
+# tests/test_scraper.py
+
+from unittest.mock import patch, Mock
+
 from app.tools.scraper_tool import scrape_webpage
 
 
-print("\nTESTING SCRAPER TOOL...\n")
+@patch("app.tools.scraper_tool.requests.get") # Mocking requests.get to avoid real HTTP calls during testing
+def test_scraper_extracts_content(mock_get):
 
-url = "https://www.ibm.com/think/topics/rag-vector-database"
+    mock_response = Mock()
 
-content = scrape_webpage(url)
+    mock_response.text = """
+    <html>
+        <body>
+            <p>Hello World</p>
+            <p>Research Content</p>
+        </body>
+    </html>
+    """
 
-print("\nSCRAPED CONTENT:\n")
+    mock_response.raise_for_status.return_value = None
 
-print(content[:3000])
+    mock_get.return_value = mock_response
+
+    content = scrape_webpage("https://fake-url.com")
+
+    assert "Hello World" in content
+    assert "Research Content" in content

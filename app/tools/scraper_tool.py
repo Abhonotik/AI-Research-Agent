@@ -1,38 +1,57 @@
+import time
 import requests
 from bs4 import BeautifulSoup
 
 
-def scrape_webpage(url: str):
+def scrape_webpage(url: str): #to search for content on the webpage
+    max_retries = 3
+    
+    for attempt in range(max_retries):
 
-    try:
+        try:
 
-        response = requests.get(
-            url,
-            timeout=10,
-            headers={
-                "User-Agent": "Mozilla/5.0"
-            }
-        )
+            response = requests.get(
+                url,
+                timeout=10,
+                headers={
+                    "User-Agent": "Mozilla/5.0" # search block hojayega agar user agent nhi bheja tho. So we have to mimic.
+                }
+            )
 
-        soup = BeautifulSoup(
-            response.text,
-            "html.parser"
-        )
+            response.raise_for_status() # raise an exception for HTTP errors
 
-        paragraphs = soup.find_all("p")
+            soup = BeautifulSoup(
+                response.text,
+                "html.parser"
+            )
 
-        content = ""
+            paragraphs = soup.find_all("p")
 
-        for p in paragraphs:
+            content = ""
 
-            content += p.get_text() + "\n"
+            for p in paragraphs:
+                content += p.get_text() + "\n"
 
-        cleaned_content = content.strip()
+            cleaned_content = content.strip()
 
-        return cleaned_content[:5000]
+            return cleaned_content[:5000]
 
-    except Exception as e:
+        except Exception as e:
 
-        print(f"Scraper Error: {e}")
+            wait_time = 2 ** attempt # wait for 1, 2, 4 seconds before retrying
 
-        return None
+            print(
+                f"Attempt {attempt + 1} failed: {e}"
+            )
+
+            if attempt < max_retries - 1: 
+
+                print(
+                    f"Retrying in {wait_time} seconds..."
+                )
+
+                time.sleep(wait_time)
+
+    print("All retries exhausted.")
+
+    return None
