@@ -37,8 +37,12 @@ if st.button("Generate Research"):
                 response = run_research_agent(query)
 
                 if not response:
-                    st.error("Research failed.")
+                    st.error("No relevant information found.")
+                    st.info("Example queries:\n- Compare top vector databases for RAG\n- Compare FastAPI vs Django\n- Explain hallucinations in LLMs")
                     st.stop()
+
+
+                    
 
                 data = response.model_dump()
 
@@ -83,5 +87,6 @@ if st.button("Generate Research"):
             except Exception as e:
 
                 st.error(
-                    f"Something went wrong: {e}"
+                    "An unexpected error occurred while processing the research request."
                 )
+                st.expander("Technical Details").write(str(e))
